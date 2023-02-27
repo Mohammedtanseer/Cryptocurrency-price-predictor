@@ -1,0 +1,44 @@
+#Description: To predict price of BITCOIN
+import pandas as pd
+import numpy as np
+from sklearn.svm import SVR
+import matplotlib.pyplot as plt
+plt.style.use('fivethirtyeight')
+
+#read the data
+df = pd.read_csv('bitcoin_data.csv')
+#set timestamp as index
+df=df.set_index(pd.DatetimeIndex(df['timestamp'].values))
+#show the data
+df
+future_days=5
+#Create a new column
+df[str(future_days)+'_Day_Price_Forecast'] = df[['close']].shift(-future_days)
+#show the data
+df[['close', str(future_days)+'_Day_Price_Forecast']]
+x = np.array(df[['close']])
+x = x[:df.shape[0] - future_days]
+print(x)
+y = np.array(df[str(future_days)+'_Day_Price_Forecast'])
+y = y[:-future_days]
+print(y)
+#Split the data
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test =train_test_split(x,y, test_size = 0.2)
+from sklearn.svm import SVR
+svr_rbf = SVR(kernel='rbf',C=1e3, gamma =0.00001)
+svr_rbf.fit(x_train, y_train)
+svr_rbf_confidence = svr_rbf.score(x_test, y_test)
+print('svr_rbf accuracy:',svr_rbf_confidence)
+svm_prediction = svr_rbf.predict(x_test)
+print(svm_prediction)
+print(y_test)
+plt.figure(figsize=(11,3))
+plt.plot(svm_prediction, label='Prediction',lw=2, alpha=.7)
+plt.plot(y_test, label='Actual', lw=2, alpha=.7)
+plt.title('Prediction vs Actual')
+plt.ylabel('Price')
+plt.xlabel('Time')
+plt.legend()
+plt.xticks(rotation=45)
+plt.show()
